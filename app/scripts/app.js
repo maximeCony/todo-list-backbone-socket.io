@@ -43,8 +43,7 @@ $(function(){
 
             // make sure no duplicates, just in case
             var exists = this.get(data._id);
-            console.log(exists);
-            
+
             if (!exists) {
               this.add(data);
               console.log('!exists');
@@ -189,7 +188,8 @@ tasks = new TaskList();
             if (!this.input.val()) return;
 
             // Create a new task
-            tasks.create({title: this.input.val()});
+            task = new Task({title: this.input.val()});
+            task.save();
             this.input.val('');
         },
     });
