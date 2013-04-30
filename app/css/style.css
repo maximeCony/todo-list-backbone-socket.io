@@ -1,0 +1,39 @@
+body{
+	text-align: center;;
+	padding: 1em;
+}
+
+#tasks .alert {
+    margin: auto auto 1em;
+    max-width: 24em;
+    padding-right: 0.7em;
+    text-align: left;
+}
+
+#tasks .alert-success span {
+	text-decoration: line-through;
+}
+
+#tasks input {
+    vertical-align: top;
+}
+
+.removeTask {
+	float: right;
+	cursor: pointer;
+}
+
+#tasks div.alert input.taskEdit{
+	display: none;
+}
+
+#tasks div.edit div.view{
+	display: none !important;
+}
+
+#tasks div.alert div.view, #tasks div.edit input.taskEdit{
+	display: inline;
+}
+
+
+

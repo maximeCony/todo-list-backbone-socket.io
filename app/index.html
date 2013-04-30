@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+
+    <head>
+        <meta charset="utf-8" />
+        <title>TO DO!</title>
+
+        <!-- Bootstrap -->
+        <link href="scripts/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet" />
+
+        <!-- The main CSS file -->
+        <link href="css/style.css" rel="stylesheet" />
+
+    </head>
+
+    <body>
+
+        <section id="app">
+            <header>
+                <h1>TO DO!</h1>
+                <hr>
+                <input id="newTask" type="text" placeholder="Your new task">
+                <section id="tasks">
+                    <!-- Populated tasks -->
+                </section>
+            </header>
+        </section>
+
+        <!-- JavaScript Includes -->
+        <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js" ></script>
+        <script src="/socket.io/socket.io.js"></script>
+        <script src="scripts/vendor/underscore.js"></script>
+        <script src="scripts/vendor/backbone.js"></script>
+        <script src="scripts/vendor/backbone.iosync.js"></script>
+        <script src="scripts/vendor/backbone.iobind.js"></script>
+
+        <script src="scripts/app.js"></script>
+
+        <script type="text/template" id="taskTemplate">
+            <div class="view">
+                <input class="taskCheckbox" type="checkbox" <%= checked ? 'checked="checked"' : '' %> />
+                <span><%- title %></span>
+                <i class="icon-remove removeTask"></i>
+            </div>
+            <input class="taskEdit" type="text" value="<%- title %>" />
+        </script>
+
+
+    </body>
+</html>
