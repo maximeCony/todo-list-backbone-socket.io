@@ -9,15 +9,40 @@ $(function(){
         urlRoot: 'task',
         idAttribute: "_id",
         initialize: function () {
-              //_.bindAll(this, 'serverChange', 'serverDelete', 'modelCleanup');
+          _.bindAll(this, 'serverChange', 'serverDelete', 'modelCleanup');
               //this.ioBind('update', window.socket, this.serverChange, this);
-              //this.ioBind('delete', window.socket, this.serverDelete, this);
+              this.ioBind('delete', window.socket, this.serverDelete, this);
           },
         // Will contain three attributes.
         // These are their default values
         defaults:{
             title: 'New task',
             checked: false
+        },
+        
+        serverChange: function (data) {
+            // Useful to prevent loops when dealing with client-side updates (ie: forms).
+            data.fromServer = true;
+            this.set(data);
+        },
+        
+        serverDelete: function (data) {
+
+            console.log('serverDelete');
+            if (this.collection) {
+                console.log('collection');
+                this.collection.remove(this);
+            } else {
+                console.log('!collection');
+                this.trigger('remove', this);
+            }
+            //this.modelCleanup();
+        },
+        
+        modelCleanup: function () {
+            console.log('modelCleanup');
+            this.ioUnbindAll();
+            return this;
         },
 
 
@@ -46,23 +71,23 @@ $(function(){
 
             if (!exists) {
               this.add(data);
-              console.log('!exists');
-            } else {
-                data.fromServer = true;
-                exists.set(data);
-            }
-          },
-
-        collectionCleanup: function (callback) {
-            this.ioUnbindAll();
-            this.each(function (model) {
-              model.modelCleanup();
-          });
-            return this;
+          } else {
+            data.fromServer = true;
+            exists.set(data);
         }
-    });
+    },
 
-tasks = new TaskList();
+    collectionCleanup: function (callback) {
+        console.log('collectionCleanup');
+        this.ioUnbindAll();
+        this.each(function (model) {
+          model.modelCleanup();
+      });
+        return this;
+    }
+});
+
+    tasks = new TaskList();
 
     // This view turns a Task model into HTML. Will create LI elements.
     var TaskView = Backbone.View.extend({
@@ -73,17 +98,24 @@ tasks = new TaskList();
 
         events:{
             'click .taskCheckbox': 'toggleTask',
-            'click .removeTask': 'removeTask',
+            'click .removeTask': 'deleteTask',
             "keypress .taskEdit"  : "taskInputKeypress",
             "dblclick"  : "editMode"
         },
 
-        initialize: function(){
+        initialize: function(model){
 
             // Set up event listeners. The change backbone event
             // is raised when a property changes (like the checked field)
-            this.listenTo(this.model, 'change', this.render);
-            this.listenTo(this.model, 'destroy', this.remove);
+            //this.listenTo(this.model, 'change', this.render);
+            //this.listenTo(this.model, 'destroy', this.remove);
+
+            _.bindAll(this, 'deleteTask', 'removeTask');
+            this.model = model;
+            //this.model.bind('change:completed', this.setStatus);
+            // this is called when the model is told to remove a task
+            this.model.bind('remove', this.removeTask);
+
         },
 
         render: function(){
@@ -121,9 +153,15 @@ tasks = new TaskList();
             this.model.toggle();
         },
 
-        removeTask: function(){
+        deleteTask: function(){
+            // Silent is true so that we react to the server
+            // broadcasting the remove event.
+            this.model.destroy({ silent: true });
+        },
 
-            this.model.destroy();
+        removeTask: function(task){
+
+            this.$el.remove();
         },
 
         closeEditMode: function(){
@@ -163,24 +201,24 @@ tasks = new TaskList();
 
         events: {
           "keypress #newTask":  "createOnEnter"
-        },
+      },
 
-        initialize: function(){
+      initialize: function(){
 
-            this.taskList = $('#tasks');
-            this.input = $('#newTask');
+        this.taskList = $('#tasks');
+        this.input = $('#newTask');
 
-            this.listenTo(tasks, 'add', this.addOne);
-            tasks.fetch();
+        this.listenTo(tasks, 'add', this.addOne);
+        tasks.fetch();
 
-        },
+    },
 
-        addOne: function(task) {
-            var view = new TaskView({model: task});
-            this.taskList.append(view.render().el);
-        },
+    addOne: function(task) {
+        var view = new TaskView(task);
+        this.taskList.append(view.render().el);
+    },
 
-        createOnEnter: function(e) {
+    createOnEnter: function(e) {
 
             // Check the enter keycode
             if (e.keyCode != 13) return;
@@ -194,6 +232,6 @@ tasks = new TaskList();
         },
     });
 
-new App();
+    new App();
 
 });
