@@ -5,7 +5,6 @@ $(function(){
     /*
     *   Log sockets
     */
-    //Original func
     var x = socket.$emit;
     socket.$emit = function(){
          var event = arguments[0];
@@ -30,36 +29,39 @@ $(function(){
         urlRoot: 'task',
         idAttribute: "_id",
         socket:window.socket,
+        
         initialize: function () {
-          
-          this.ioBind('update', window.socket, this.serverUpdate, this);
-          this.ioBind('delete', window.socket, this.serverDelete, this);
+            // bind update event from the server
+            this.ioBind('update', window.socket, this.serverUpdate, this);
+            // bind update event from the server
+            this.ioBind('delete', window.socket, this.serverDelete, this);
         },
+        
         // Will contain default attributes.
         defaults:{
             title: 'New task',
             checked: false,
             importance: 0
         },
+        
         // Helper function for checking/unchecking a task
         toggle: function(){
             this.save('checked', !this.get('checked'));
         },
         
         serverUpdate: function(data) {
-            console.log('serverUpdate');
             this.set(data);
-            console.log(this);
         },
         
-        serverDelete: function(task) {
-
+        serverDelete: function(data) {
             if (this.collection) {
+                // will trigger the 'remove' event
                 this.collection.remove(this);
             } else {
                 this.trigger('remove', this);
             }
         }
+
     });
 
     /* 
@@ -67,9 +69,10 @@ $(function(){
     */
     App.Collections.Tasks = Backbone.Collection.extend({
         url: 'tasks',
+        
         initialize: function () {
-
-          this.ioBind('create', window.socket, this.serverCreate, this);
+            // bind create event from the server
+            this.ioBind('create', window.socket, this.serverCreate, this);
         },
         
         serverCreate: function (task) {
@@ -92,6 +95,7 @@ $(function(){
         tagName: 'div',
         className: 'alert',
         template: _.template($('#taskTemplate').html()),
+        
         events:{
             'click .taskCheckbox': 'toggleTask',
             'click .removeTask': 'removeTask',
@@ -188,7 +192,6 @@ $(function(){
         },
 
         addOne: function(model){
-
             //create a new collection view
             var taskView = new App.Views.Task({model: model});
             //render the collection
@@ -227,7 +230,6 @@ $(function(){
         },
 
         createOnEnter: function(e) {
-
             // prevent from default submit
             e.preventDefault();
             // get task's title
@@ -235,21 +237,16 @@ $(function(){
             // prevent empty submit
             if (!titleInput.val()) return;
             // Create a new task
-            /*this.tasks.create({
-                title: titleInput.val(),
-                importance: $('#taskForm input[name=importance]:checked').val()
-            });*/
-
             var _task = new App.Models.Task({
                 title: titleInput.val(),
                 importance: $('#taskForm input[name=importance]:checked').val()
             });
-
+            // save the task (send socket)
             _task.save();
-
             // empty the title field
             titleInput.val('');
-        },
+        }
+
     });
 
     var app = new App.Views.App();
