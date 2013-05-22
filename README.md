@@ -1,4 +1,4 @@
-# Backbone + socket.io todo list
+# Todo List - Backbone + socket.io
 
 ## Technologies used server side
 
