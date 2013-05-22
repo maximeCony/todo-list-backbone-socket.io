@@ -47,7 +47,9 @@ $(function(){
         },
         
         serverUpdate: function(data) {
+            console.log('serverUpdate');
             this.set(data);
+            console.log(this);
         },
         
         serverDelete: function(task) {
@@ -99,6 +101,7 @@ $(function(){
         },
 
         initialize: function(){
+            this.listenTo(this.model, 'change', this.render);
             this.listenTo(this.model, 'remove', this.remove);
         },
 

@@ -67,10 +67,10 @@ io.sockets.on('connection', function (socket) {
 
 	socket.on('task:update', function (data, callback) {
 
-		console.log('DELETE!!!');
+		console.log('UPDATE!!!');
 		
 		var dbId = data._id - 1;
-		var json = db[dbId];
+		var json = db[dbId] = data;
 
 		socket.emit('task/' + data._id + ':update', json);
 		socket.broadcast.emit('task/' + data._id + ':update', json);
