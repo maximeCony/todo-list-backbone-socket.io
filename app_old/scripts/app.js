@@ -1,20 +1,6 @@
 $(function(){
 
     window.socket = io.connect('http://localhost');
-    
-    /*
-    *   Log sockets
-    */
-    //Original func
-    var x = socket.$emit;
-    socket.$emit = function(){
-         var event = arguments[0];
-         var feed  = arguments[1];
-         //Log
-         console.log(event + ":", feed);
-        //To pass listener  
-        x.apply(this, Array.prototype.slice.call(arguments));       
-    };
 
     // Will contain our app componments
     var App = {
@@ -27,12 +13,10 @@ $(function(){
     * Task Model
     */
     App.Models.Task = Backbone.Model.extend({
-        urlRoot: 'task',
-        idAttribute: "_id",
-        socket:window.socket,
+        urlRoot: 'tasks',
         initialize: function () {
-          
-          this.ioBind('update', window.socket, this.serverUpdate, this);
+          //_.bindAll(this, 'serverChange', 'serverDelete', 'modelCleanup');
+          this.ioBind('update', window.socket, this.serverChange, this);
           this.ioBind('delete', window.socket, this.serverDelete, this);
         },
         // Will contain default attributes.
@@ -46,17 +30,24 @@ $(function(){
             this.save('checked', !this.get('checked'));
         },
         
-        serverUpdate: function(data) {
+        serverChange: function(data) {
+            // Useful to prevent loops when dealing with client-side updates (ie: forms).
+            data.fromServer = true;
             this.set(data);
         },
         
-        serverDelete: function(task) {
-
+        serverDelete: function(data) {
             if (this.collection) {
-                this.collection.remove(this);
+              this.collection.remove(this);
             } else {
-                this.trigger('remove', this);
+              this.trigger('remove', this);
             }
+            this.modelCleanup();
+        },
+        
+        modelCleanup: function() {
+            this.ioUnbindAll();
+            return this;
         }
     });
 
@@ -65,19 +56,30 @@ $(function(){
     */
     App.Collections.Tasks = Backbone.Collection.extend({
         url: 'tasks',
+        
         initialize: function () {
-
+          //_.bindAll(this, 'serverCreate', 'collectionCleanup');
           this.ioBind('create', window.socket, this.serverCreate, this);
         },
         
-        serverCreate: function (task) {
+        serverCreate: function (data) {
             // make sure no duplicates, just in case
-            var exists = this.get(task._id);
+            var exists = this.get(data.id);
             if (!exists) {
-              this.add(task);
+              this.add(data);
+            } else {
+              data.fromServer = true;
+              exists.set(data);
             }
         },
-
+        
+        collectionCleanup: function (callback) {
+            this.ioUnbindAll();
+            this.each(function (model) {
+              model.modelCleanup();
+            });
+            return this;
+        },
         // Will hold objects of the Task model
         model: App.Models.Task
     });
@@ -99,7 +101,8 @@ $(function(){
         },
 
         initialize: function(){
-            this.listenTo(this.model, 'remove', this.remove);
+            this.listenTo(this.model, 'change', this.render);
+            this.listenTo(this.model, 'destroy', this.remove);
         },
 
         render: function(){
@@ -149,20 +152,17 @@ $(function(){
         },
 
         removeTask: function(){
-            // Silent is true so that we react to the server
-            // broadcasting the remove event.
+
             this.model.destroy();
         },
 
         editTask: function(e) {
-
             // prevent from default submit
             e.preventDefault();
             // get title value
             var title = this.$('.taskTitleEditInput').val();
             // Prevent empty validation
             if (!title) return;
-
             // Edit the task
             this.model.save({
                 title: title,
@@ -225,6 +225,8 @@ $(function(){
 
         createOnEnter: function(e) {
 
+            console.log('test');
+
             // prevent from default submit
             e.preventDefault();
             // get task's title
@@ -232,18 +234,10 @@ $(function(){
             // prevent empty submit
             if (!titleInput.val()) return;
             // Create a new task
-            /*this.tasks.create({
-                title: titleInput.val(),
-                importance: $('#taskForm input[name=importance]:checked').val()
-            });*/
-
-            var _task = new App.Models.Task({
+            this.tasks.create({
                 title: titleInput.val(),
                 importance: $('#taskForm input[name=importance]:checked').val()
             });
-
-            _task.save();
-
             // empty the title field
             titleInput.val('');
         },

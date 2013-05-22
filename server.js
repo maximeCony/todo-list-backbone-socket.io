@@ -18,12 +18,12 @@ app.get('/', function (req, res) {
 
 //db object used to save tasks
 var db = [
-	{_id:1, title: 'New task', checked: false},
-	{_id:2, title: 'New task 2', checked: true}
+	{_id:1, title: 'Server - New task', checked: false},
+	{_id:2, title: 'Server - New task 2', checked: true}
 ];
 
 io.sockets.on('connection', function (socket) {
-	
+
 	/**
    	* task:create
    	*
@@ -33,7 +33,10 @@ io.sockets.on('connection', function (socket) {
    	* on the collection namespace
    	*/
 	socket.on('task:create', function (data, callback) {
-		data._id = db.length + 1;
+
+      console.log('CREATE!!!');
+
+      data._id = db.length + 1;
 		db.push(data);
 
 		//send task to the client
@@ -51,29 +54,50 @@ io.sockets.on('connection', function (socket) {
    	* in the client-side router
    	*/
 	socket.on('tasks:read', function (data, callback) {
-		console.log('callback!', callback);
+      console.log('READ!!!');
 		callback(null, db);
 	});
 
 	/**
-   	* task:delete
-   	*
-   	* called when we .destroy() our model
-   	*/
+	* task:update
+	*
+	* called when we .save() our model
+	* after toggling its completed status
+	*/
 
-   	socket.on('task:delete', function (data, callback) {
-   		
-   		var dbId = data._id - 1;
-   		var json = db[dbId];
+	socket.on('task:update', function (data, callback) {
 
-   		socket.emit('task/' + data._id + ':delete', json);
-   		socket.broadcast.emit('task/' + data._id + ':delete', json);
-   		callback(null, json);
+		console.log('DELETE!!!');
+		
+		var dbId = data._id - 1;
+		var json = db[dbId];
 
-   		console.log('yooooooooooooo',json);
-   		console.log('yooooooooooooo',data._id);
+		socket.emit('task/' + data._id + ':update', json);
+		socket.broadcast.emit('task/' + data._id + ':update', json);
+		callback(null, json);
+	});
 
-   		db.splice(dbId, 1);
-   	});
+   /**
+	* task:delete
+	*
+	* called when we .destroy() our model
+	*/
+
+	socket.on('task:delete', function (data, callback) {
+
+		console.log('DELETE!!!');
+		
+		var dbId = data._id - 1;
+		var json = db[dbId];
+
+		socket.emit('task/' + data._id + ':delete', json);
+		socket.broadcast.emit('task/' + data._id + ':delete', json);
+		callback(null, json);
+
+		console.log('JSON:',json);
+		console.log('Data id:',data._id);
+
+		db.splice(dbId, 1);
+	});
 
    });
